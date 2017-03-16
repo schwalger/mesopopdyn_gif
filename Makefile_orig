@@ -1,0 +1,45 @@
+#Makefile12
+#make -Bf Makefile12 all
+
+VERSION=12
+CC=gcc
+SOURCESpop.c= glm_popdyn_1.0.c
+SOURCESneuron.c= glm_netw_sim_0.7.c
+SOURCESmaster.c= glm_mastereq.c
+CFLAGS=-lm -lgsl -lgslcblas -lfftw3 -O3 #-O -Wall -Wextra
+
+
+.PHONY : clean all
+
+#all: glm_popdyn.so glm_netw_sim.so svn
+all: glm_popdyn.so glm_netw_sim.so glm_mastereq.so
+
+
+
+glm_popdyn.so : glm_popdyn.o
+	$(CC) -shared -Wl,-soname,glm_popdyn_$(VERSION).so -o glm_popdyn_$(VERSION).so glm_popdyn_$(VERSION).o $(CFLAGS) 
+
+glm_popdyn.o : $(SOURCESpop.c)
+	$(CC) -c -fPIC $(SOURCESpop.c) -o glm_popdyn_$(VERSION).o $(CFLAGS) 
+
+
+
+glm_netw_sim.so : glm_netw_sim.o
+	$(CC) -shared -Wl,-soname,glm_netw_sim_$(VERSION).so -o glm_netw_sim_$(VERSION).so glm_netw_sim_$(VERSION).o $(CFLAGS) 
+
+glm_netw_sim.o : $(SOURCESneuron.c)
+	$(CC) -c -fPIC $(SOURCESneuron.c) -o glm_netw_sim_$(VERSION).o $(CFLAGS) 
+
+
+
+glm_mastereq.so : glm_mastereq.o
+	$(CC) -shared -Wl,-soname,glm_mastereq_$(VERSION).so -o glm_mastereq_$(VERSION).so glm_mastereq_$(VERSION).o $(CFLAGS) 
+
+glm_mastereq.o : $(SOURCESpop.c)
+	$(CC) -c -fPIC $(SOURCESmaster.c) -o glm_mastereq_$(VERSION).o $(CFLAGS) 
+
+
+
+clean :
+	rm -vf glm_popdyn_$(VERSION).so glm_popdyn_$(VERSION).o glm_popdyn.pyc glm_netw sim_$(VERSION).so glm netw_sim_$(VERSION).o glm_netw_sim.pyc glm_mastereq_$(VERSION).so glm_mastereq_$(VERSION).o glm_mastereq.pyc
+
