@@ -13,6 +13,7 @@ parentdir = os.path.dirname(currentdir)
 sys.path.insert(0,parentdir)
 
 import multipop16 as mp
+#import multipop15 as mp #for use with orig algorithm w/o lookup table for hazard, slower
 import multiprocessing as multproc
 
 
@@ -140,8 +141,8 @@ ylim((-0.2,1.2))
 ylabel('I(t)')
 axis('off')
 
-fname='trajecs'+p1.__get_parameter_string__() + '.svg'
-#savefig(fname)
+fname='trajecs'+p1.__get_parameter_string__() + '.png'
+savefig(fname)
 show()
 
 
@@ -218,7 +219,7 @@ ax.spines['top'].set_visible(False)
 ax.xaxis.set_ticks_position('bottom')
 ax.yaxis.set_ticks_position('left')
 xlim((0.05,500))
-#savefig('psd'+p1.__get_parameter_string__()+'.svg')
+savefig('psd'+p1.__get_parameter_string__()+'.png')
 show()
 
 
@@ -232,3 +233,4 @@ p1.get_isistat()
 print 'rate= ',p1.rate
 print 'CV= ',p1.cv
 p1.save_isih()
+

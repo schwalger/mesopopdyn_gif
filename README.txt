@@ -9,7 +9,7 @@ Libraries needed for compiling c code
 Create python modules from c libraries
 --------------------------------------
 
-make -Bf Makefile13
+make -Bf Makefile_fasthazard
 
 
 

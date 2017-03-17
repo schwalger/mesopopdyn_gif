@@ -184,7 +184,7 @@ if with_micro:
 
 fname='trjc_ei_N%d_p%g'%(N[0]+N[1],pconn)
 # savefig(fname+'.svg')
-# savefig(fname+'.png')
+savefig(fname+'.png')
 show()
 
 
@@ -243,6 +243,9 @@ xlim(xmax=500)
 xlabel('f [Hz]')
 ylabel('power spectrum [Hz]')
 #legend(loc=4,bbox_to_anchor=(1,-0.1))
+
+fname='psd_ei_N%d_p%g'%(N[0]+N[1],pconn)
+savefig(fname+'.png')
 show()
 
 
