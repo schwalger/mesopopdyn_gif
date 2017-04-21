@@ -1,6 +1,6 @@
-This project provides simulation code associated with the arxiv preprint
+This project provides simulation code associated with the publication
 
-[T. Schwalger, M. Deger, and W. Gerstner. Towards a theory of cortical columns: From spiking neurons to interacting neural populations of finite size. ArXiv e-prints, November 2016.](https://arxiv.org/abs/1611.00294)
+[T. Schwalger, M. Deger, and W. Gerstner. Towards a theory of cortical columns: From spiking neurons to interacting neural populations of finite size. PLoS Comput. Biol., 13(4):e1005507, 2017.](https://infoscience.epfl.ch/record/227465?ln=en)
 
 The core simulation code is written in C. There are two libraries:
 - glm_netw_sim_0.8.c for the microscopic (neuron-based) simulation
