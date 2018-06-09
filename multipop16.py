@@ -2,7 +2,7 @@
 #
 #
 # Moritz Deger, moritz.deger@epfl.ch, May 15, 2015
-# Tilo Schwalger, tilo.schwalger@epfl.ch, May 15, 2015
+# Tilo Schwalger, tilo.schwalger@epfl.ch, June, 2018
 
 import pdb
 
@@ -528,8 +528,10 @@ class MultiPop(object):
             self.sim_a=f['a']
             self.sim_A=f['A']
             if self.__sim_mode__=='netw_tilo_record_voltage':
-                self.voltage=[np.vstack(f['V'][i]) for i in range(self.K)]
-                self.threshold=[np.vstack(f['theta'][i]) for i in range(self.K)]
+                self.voltage = [f['V'][i].T for i in range(self.K)]
+                self.threshold = [f['theta'][i].T for i in range(self.K)]
+                # self.voltage=[np.vstack(f['V'][i]) for i in range(self.K)]
+                # self.threshold=[np.vstack(f['theta'][i]) for i in range(self.K)]
         else:
             if self.__sim_mode__==None:
                 print 'No network has been built. Call build_network... first!'
@@ -789,22 +791,6 @@ class MultiPop(object):
         pylab.show()
 
 
-
-    def xm_sim(self, param='sim.par',t0=0):
-        dt=self.sim_t[1]-self.sim_t[0]
-        i0=int(t0/dt)
-        try: 
-            self.xmtrajec.multi(1,1,hgap=0.3,vgap=0.3,offset=0.15)
-        except: 
-            self.xmtrajec=gracePlot(figsize=(720,540))
-            self.xmtrajec.multi(1,1,hgap=0.3,vgap=0.3,offset=0.15)
-
-        self.xmtrajec.focus(0,0)
-        self.xmtrajec.plot( self.sim_t[i0:], self.sim_a[i0:])
-        print self.sim_t[i0:]
-        self.xmtrajec.grace('getp "%s"'%(param,))
-        self.xmtrajec.grace('redraw')
-
         
     def plot_psd(self, title='',axis_scaling='loglog'):
         pylab.figure(10)
@@ -821,17 +807,6 @@ class MultiPop(object):
         pylab.title(title)
         pylab.show()
 
-    def xm_psd(self, param='psd.par'):
-        try: 
-            self.xmpsd.multi(1,1,hgap=0.3,vgap=0.3,offset=0.15)
-        except: 
-            self.xmpsd=gracePlot(figsize=(720,540))
-            self.xmpsd.multi(1,1,hgap=0.3,vgap=0.3,offset=0.15)
-
-        self.xmpsd.focus(0,0)
-        self.xmpsd.plot( self.freq, self.psd)
-        self.xmpsd.grace('getp "%s"'%(param,))
-        self.xmpsd.grace('redraw')
 
 
     def plot_voltage(self,k=0,offset=0):
@@ -849,28 +824,6 @@ class MultiPop(object):
         else:
             print 'Nrecord must be at least 1 to plot voltage!'
 
-    def xm_voltage(self,k=0,offset=0, param='voltage.par'):
-        """
-        plot voltage traces for population k 
-        (1st population has index k=0)
-        """
-        try: 
-            self.xmvolt.multi(1,1,hgap=0.3,vgap=0.3,offset=0.15)
-        except: 
-            self.xmvolt=gracePlot(figsize=(720,540))
-            self.xmvolt.multi(1,1,hgap=0.3,vgap=0.3,offset=0.15)
-
-        self.xmvolt.focus(0,0)
-
-        if (self.Nrecord[k]>0):
-            Nbin=len(self.voltage[k])
-            t=self.dt_rec*np.arange(Nbin)
-            offset_matrix=np.outer(np.ones(Nbin),np.arange(self.Nrecord[k])) * offset
-            self.xmvolt.plot(t,self.voltage[k]+offset_matrix)
-            self.xmvolt.grace('getp "%s"'%(param,))
-            self.xmvolt.grace('redraw')            
-        else:
-            print 'Nrecord must be at least 1 to plot voltage!'
 
 
 
@@ -1004,9 +957,9 @@ class MultiPop(object):
             if not os.path.exists('data'):
                 os.makedirs('data')
             if self.__sim_mode__=='netw_tilo_record_voltage':
-                np.savez(fname,t=self.sim_t,A=self.sim_A, a=self.sim_a,V=self.voltage,theta=self.threshold)
+                np.savez_compressed(fname,t=self.sim_t,A=self.sim_A, a=self.sim_a,V=self.mp.voltage,theta=self.mp.threshold)
             else:
-                np.savez(fname,t=self.sim_t,A=self.sim_A, a=self.sim_a)
+                np.savez_compressed(fname,t=self.sim_t,A=self.sim_A, a=self.sim_a)
 
     def clean_trajec(self, fname=None):
         if fname==None:
