@@ -299,7 +299,7 @@ class Multipop(object):
         Nrecord=np.array(Nrecord,dtype=np.intc)
         assert len(Nrecord)==self.Npop
         Nrecord_tot=Nrecord.sum()
-        voltage_matrix=np.zeros((2*Nrecord_tot,self.Nbin),dtype=float)
+        voltage_matrix=np.zeros((2*Nrecord_tot,self.Nbin),dtype=float) #factor 2 arises because voltage and threshold are saved in voltage_matrix in C program
         print voltage_matrix.shape
 
         lib2.get_trajectory_voltage_srm_with_2D_arrays(self.Nbin, self.A, voltage_matrix, Nrecord, Vspike, self.Npop, self.tref, self.taum, self.taus1, self.taus2, self.taur1, self.taur2, self.a1, self.a2, self.mu, self.c, self.D, self.delay, self.vth, self.vreset, self.N, self.J, self.p_conn, self.signal, self.N_theta, self.Jref, self.J_theta_1d, self.tau_theta_1d, self.sigma, self.dt, self.dtbin,self.mode, seed, seed_quenched)

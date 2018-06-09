@@ -541,8 +541,10 @@ class MultiPop(object):
             self.sim_a=f['a']
             self.sim_A=f['A']
             if self.__sim_mode__=='netw_tilo_record_voltage':
-                self.voltage=[np.vstack(f['V'][i]) for i in range(self.K)]
-                self.threshold=[np.vstack(f['theta'][i]) for i in range(self.K)]
+                self.voltage = [f['V'][i].T for i in range(self.K)]
+                self.threshold = [f['theta'][i].T for i in range(self.K)]
+                # self.voltage=[np.vstack(f['V'][i]) for i in range(self.K)]
+                # self.threshold=[np.vstack(f['theta'][i]) for i in range(self.K)]
         else:
             if self.__sim_mode__==None:
                 print 'No network has been built. Call build_network... first!'
@@ -968,9 +970,9 @@ class MultiPop(object):
             if not os.path.exists('data'):
                 os.makedirs('data')
             if self.__sim_mode__=='netw_tilo_record_voltage':
-                np.savez(fname,t=self.sim_t,A=self.sim_A, a=self.sim_a,V=self.voltage,theta=self.threshold)
+                np.savez_compressed(fname,t=self.sim_t,A=self.sim_A, a=self.sim_a,V=self.mp.voltage,theta=self.mp.threshold)
             else:
-                np.savez(fname,t=self.sim_t,A=self.sim_A, a=self.sim_a)
+                np.savez_compressed(fname,t=self.sim_t,A=self.sim_A, a=self.sim_a)
 
     def clean_trajec(self, fname=None):
         if fname==None:
