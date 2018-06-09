@@ -174,7 +174,7 @@ void get_inputs(double *input, int k,double **Es1,double **Es2,double **Er1,doub
 
       //base line input
       input[i]=p[i].mu;
-      double h_ext, h_syn = 0;
+      double h_ext=0., h_syn = 0;
       
       //external input, assumed to be slow compared to DT
       if (p[i].Iext != NULL) 
