@@ -9,7 +9,7 @@
 # pop_spectrum.py.
 #
 # Moritz Deger, moritz.deger@epfl.ch, May 15, 2015
-# Tilo Schwalger, tilo.schwalger@epfl.ch, May 15, 2015
+# Tilo Schwalger, tilo.schwalger@epfl.ch, June, 2018
 
 import pdb
 
@@ -21,20 +21,13 @@ except:
 import pylab
 import os.path
 import os
-try:
-    from pygrace.gracePlot import gracePlot
-except:
-    print 'could not load gracePlot!'
+
 
 # to import nest, could be done in a nicer way
 import sys
-nestpath3 = '/home/deger/repos/inteqfnc/nest-github-mdeger_bin/lib/python2.7/site-packages/'
-nestpath4 = '/mnt/disk2/moritz/repos/svn_inteqfnc/trunk/nest-github-mdeger_bin/lib/python2.7/site-packages/'
-nestpath5 = '/home/schwalge/phys/network_dynamics/nonlin_netwdyn/inteqfnc/nest-github-mdeger_bin/lib/python2.7/site-packages'
-sys.path.append(nestpath3)
-sys.path.append(nestpath4)
-sys.path.append(nestpath5)
-sys.path.reverse()
+# nestpath5 = '/home/schwalge/phys/network_dynamics/nonlin_netwdyn/inteqfnc/nest-github-mdeger_bin/lib/python2.7/site-packages'
+# sys.path.append(nestpath5)
+# sys.path.reverse()
 #import nest
 import multipop_c_12 as mpc
 from numpy.fft import fft
@@ -809,22 +802,6 @@ class MultiPop(object):
         pylab.show()
 
 
-
-    def xm_sim(self, param='sim.par',t0=0):
-        dt=self.sim_t[1]-self.sim_t[0]
-        i0=int(t0/dt)
-        try: 
-            self.xmtrajec.multi(1,1,hgap=0.3,vgap=0.3,offset=0.15)
-        except: 
-            self.xmtrajec=gracePlot(figsize=(720,540))
-            self.xmtrajec.multi(1,1,hgap=0.3,vgap=0.3,offset=0.15)
-
-        self.xmtrajec.focus(0,0)
-        self.xmtrajec.plot( self.sim_t[i0:], self.sim_a[i0:])
-        print self.sim_t[i0:]
-        self.xmtrajec.grace('getp "%s"'%(param,))
-        self.xmtrajec.grace('redraw')
-
         
     def plot_psd(self, title='',axis_scaling='loglog'):
         pylab.figure(10)
@@ -841,17 +818,6 @@ class MultiPop(object):
         pylab.title(title)
         pylab.show()
 
-    def xm_psd(self, param='psd.par'):
-        try: 
-            self.xmpsd.multi(1,1,hgap=0.3,vgap=0.3,offset=0.15)
-        except: 
-            self.xmpsd=gracePlot(figsize=(720,540))
-            self.xmpsd.multi(1,1,hgap=0.3,vgap=0.3,offset=0.15)
-
-        self.xmpsd.focus(0,0)
-        self.xmpsd.plot( self.freq, self.psd)
-        self.xmpsd.grace('getp "%s"'%(param,))
-        self.xmpsd.grace('redraw')
 
 
     def plot_voltage(self,k=0,offset=0):
@@ -869,28 +835,6 @@ class MultiPop(object):
         else:
             print 'Nrecord must be at least 1 to plot voltage!'
 
-    def xm_voltage(self,k=0,offset=0, param='voltage.par'):
-        """
-        plot voltage traces for population k 
-        (1st population has index k=0)
-        """
-        try: 
-            self.xmvolt.multi(1,1,hgap=0.3,vgap=0.3,offset=0.15)
-        except: 
-            self.xmvolt=gracePlot(figsize=(720,540))
-            self.xmvolt.multi(1,1,hgap=0.3,vgap=0.3,offset=0.15)
-
-        self.xmvolt.focus(0,0)
-
-        if (self.Nrecord[k]>0):
-            Nbin=len(self.voltage[k])
-            t=self.dt_rec*np.arange(Nbin)
-            offset_matrix=np.outer(np.ones(Nbin),np.arange(self.Nrecord[k])) * offset
-            self.xmvolt.plot(t,self.voltage[k]+offset_matrix)
-            self.xmvolt.grace('getp "%s"'%(param,))
-            self.xmvolt.grace('redraw')            
-        else:
-            print 'Nrecord must be at least 1 to plot voltage!'
 
 
 

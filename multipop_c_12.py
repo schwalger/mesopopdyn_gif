@@ -9,14 +9,17 @@ import numpy.ctypeslib as npct
 from ctypes import c_int,c_double
 import multiprocessing as multproc
 
-
+import os 
+dir_path = os.path.dirname(os.path.realpath(__file__))
+print dir_path
 
 array_1d_double = npct.ndpointer(dtype=np.double, ndim=1, flags='CONTIGUOUS')
 array_1d_int = npct.ndpointer(dtype=np.intc, ndim=1, flags='CONTIGUOUS')
 array_2d_double = npct.ndpointer(dtype=np.double, ndim=2, flags='CONTIGUOUS')
 
 # load library for simulation of population equations
-lib = npct.load_library("../glm_popdyn_%d"%(version,), ".")
+#lib = npct.load_library("../glm_popdyn_%d"%(version,), ".")
+lib = npct.load_library("glm_popdyn_%d"%(version,), dir_path)
 lib.get_trajectory_with_2D_arrays.restype = None
 lib.get_trajectory_with_2D_arrays.argtypes = [c_int, array_2d_double, array_2d_double, \
                                                   c_int, array_1d_double, array_1d_double, \
@@ -49,7 +52,7 @@ lib.get_psd_with_2D_arrays.argtypes = [c_int, array_2d_double, c_int, \
 
 
 # load library for full spiking network simulation
-lib2 = npct.load_library("../glm_netw_sim_%d"%(version,), ".")
+lib2 = npct.load_library("glm_netw_sim_%d"%(version,), dir_path)
 lib2.get_trajectory_srm_with_2D_arrays.restype = None
 lib2.get_trajectory_srm_with_2D_arrays.argtypes = [c_int, array_2d_double, \
                                                   c_int, array_1d_double, array_1d_double, \
