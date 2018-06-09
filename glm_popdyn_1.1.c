@@ -92,10 +92,10 @@ struct PopParametersGLM{
 struct PopVariablesGLM{
   double h;
   double *u;
-  double *Xsyn1; //incoming synaptic currents (filtered with fast decay time, e.g. AMPA, GABA)
-  double *Xsyn2; //incoming synaptic currents (filtered with slow decay time, e.g. NMDA)
-  double *Isyn1; //total incoming synaptic current (sum of Xsyn1+Xsyn2 filtered with short rise-time)
-  double *Isyn2; //total incoming synaptic current (sum of Xsyn1+Xsyn2 filtered with short rise-time)
+  double *ys1; //incoming synaptic currents (filtered with fast decay time, e.g. AMPA, GABA)
+  double *ys2; //incoming synaptic currents (filtered with slow decay time, e.g. NMDA)
+  double *yr1; //total incoming synaptic current (sum of ys1+ys2 filtered with short rise-time)
+  double *yr2; //total incoming synaptic current (sum of ys1+ys2 filtered with short rise-time)
   unsigned int *n;
   double *m0;
   double *theta;  //threshold kernel
@@ -145,6 +145,18 @@ void init_synaptic_filters(double **Es1, double **Es2, double **Er1, double **Er
 }
 
 
+
+double Fsyn(double tau, double E, struct PopParametersGLM p)
+// returns doubly-low-pass filter (exp(-DT/taum)-exp(-DT/tau))/(taum-tau)
+{
+  if (tau == p.taum)
+    return DT / (tau*tau) * p.Em;
+  else
+    return (p.Em - E) / (p.taum - tau);
+}
+
+
+
 void get_inputs(double *input, int k,double **Es1,double **Es2,double **Er1,double **Er2, struct PopParametersGLM p[], struct PopVariablesGLM pop[],int Npop)
 {
   int i,j,ndelay;
@@ -162,64 +174,84 @@ void get_inputs(double *input, int k,double **Es1,double **Es2,double **Er1,doub
 
       //base line input
       input[i]=p[i].mu;
+      double h_ext, h_syn = 0;
       
       //external input, assumed to be slow compared to DT
       if (p[i].Iext != NULL) 
-	input[i] += p[i].Iext[k] * (1-p[i].Em);  //add external input if provided
+	h_ext = p[i].Iext[k] * (1-p[i].Em);  //add external input if provided
 
       //synaptic input
       for (j=0;j<Npop;j++) 
 	{
-	  if (p[i].taur1[j]>0)
+	  if (p[i].w1[j] != 0)
 	    {
-	      printf("Warning: rise time not correctly implemented\n");
-	      input[i]+=p[i].w1[j]*pop[i].Isyn1[j];
-
-	      if (p[i].taus1[j] > 0)
+	      if (p[i].taur1[j]>0)
+		//doubly low-pass filter
 		{
-		  pop[i].Isyn1[j] = pop[i].Xsyn1[j] + (pop[i].Isyn1[j] - pop[i].Xsyn1[j]) * Er1[i][j];
-		  pop[i].Xsyn1[j] = A[j] + (pop[i].Xsyn1[j] - A[j]) * Es1[i][j];
+		  //see Documents/scans/doublyfilteredsynaptcurr.pdf
+		  //case taur==taus not allowed
+		  h_syn += p[i].w1[j] * (A[j] * (1-p[i].Em) +		\
+					 p[i].taur1[j] * (pop[i].yr1[j] - A[j]) * Fsyn(p[i].taur1[j],Er1[i][j],p[i]) + \
+					 p[i].taus1[j] * (pop[i].ys1[j] - A[j]) / (p[i].taus1[j] - p[i].taur1[j]) * \
+					 (p[i].taus1[j]*Fsyn(p[i].taus1[j], Es1[i][j],p[i]) - p[i].taur1[j]*Fsyn(p[i].taur1[j], Er1[i][j],p[i])));
+		  
+		  if (p[i].taus1[j] > 0)
+		    {
+		      pop[i].yr1[j] = A[j] + (pop[i].yr1[j] - A[j]) * Er1[i][j] + \
+			p[i].taus1[j] * (pop[i].ys1[j] - A[j]) * (Es1[i][j] - Er1[i][j]) / (p[i].taus1[j] - p[i].taur1[j]);
+		      pop[i].ys1[j] = A[j] + (pop[i].ys1[j] - A[j]) * Es1[i][j];
+		    }
+		  else 
+		    pop[i].yr1[j] = A[j] + (pop[i].yr1[j] - A[j]) * Es1[i][j];
 		}
-	      else 
-		  pop[i].Isyn1[j] = A[j] + (pop[i].Isyn1[j] - A[j]) * Es1[i][j];
+	      else //zero-rise time, single low-pass filter
+		if (p[i].taus1[j] > 0)
+		  {
+		    h_syn += p[i].w1[j] * (A[j] + (p[i].taus1[j] * (pop[i].ys1[j] - A[j]) * Es1[i][j] - (pop[i].ys1[j] * p[i].taus1[j] - A[j] * p[i].taum) * p[i].Em) / (p[i].taus1[j] - p[i].taum));
+		    pop[i].ys1[j] = A[j] + (pop[i].ys1[j] - A[j]) * Es1[i][j];
+		  }
+		else //delta current
+		  {
+		    h_syn+=p[i].w1[j]*A[j] * (1 - p[i].Em);
+		  }		
+	      
 	    }
-	  else //zero-rise time
-	    if (p[i].taus1[j] > 0)
-	      {
-		input[i] += p[i].w1[j] * (A[j] + (p[i].taus1[j] * (pop[i].Xsyn1[j] - A[j]) * Es1[i][j] - (pop[i].Xsyn1[j] * p[i].taus1[j] - A[j] * p[i].taum) * p[i].Em) / (p[i].taus1[j] - p[i].taum));
-
-
-		pop[i].Xsyn1[j] = A[j] + (pop[i].Xsyn1[j] - A[j]) * Es1[i][j];
-	      }
-	    else //delta current
-	      {
-		input[i]+=p[i].w1[j]*A[j] * (1 - p[i].Em);
-	      }		
 	
 
 	  //same for 2nd filter
-	  if (p[i].taur2[j]>0)
+	  if (p[i].w2[j] != 0)
 	    {
-	      input[i]+=p[i].w2[j]*pop[i].Isyn2[j];
-
-	      if (p[i].taus2[j] > 0)
+	      if (p[i].taur2[j]>0)
 		{
-		  pop[i].Isyn2[j] = pop[i].Xsyn2[j] + (pop[i].Isyn2[j] - pop[i].Xsyn2[j]) * Er2[i][j];
-		  pop[i].Xsyn2[j] = A[j] + (pop[i].Xsyn2[j] - A[j]) * Es2[i][j];
+		  //see Documents/scans/doublyfilteredsynaptcurr.pdf
+		  //case taur==taus not allowed
+		  h_syn += p[i].w2[j] * (A[j] * (1-p[i].Em) +		\
+					 p[i].taur2[j] * (pop[i].yr2[j] - A[j]) * Fsyn(p[i].taur2[j],Er2[i][j],p[i]) + \
+					 p[i].taus2[j] * (pop[i].ys2[j] - A[j]) / (p[i].taus2[j] - p[i].taur2[j]) * \
+					 (p[i].taus2[j]*Fsyn(p[i].taus2[j], Es2[i][j],p[i]) - p[i].taur2[j]*Fsyn(p[i].taur2[j], Er2[i][j],p[i])));
+		  
+		  if (p[i].taus2[j] > 0)
+		    {
+		      pop[i].yr2[j] = A[j] + (pop[i].yr2[j] - A[j]) * Er2[i][j] + \
+			p[i].taus2[j] * (pop[i].ys2[j] - A[j]) * (Es2[i][j] - Er2[i][j]) / (p[i].taus2[j] - p[i].taur2[j]);
+		      pop[i].ys2[j] = A[j] + (pop[i].ys2[j] - A[j]) * Es2[i][j];
+		    }
+		  else 
+		    pop[i].yr2[j] = A[j] + (pop[i].yr2[j] - A[j]) * Es2[i][j];
 		}
-	      else 
-		  pop[i].Isyn2[j] = A[j] + (pop[i].Isyn2[j] - A[j]) * Es2[i][j];
+	      else //zero-rise time
+		if (p[i].taus2[j] > 0)
+		  {
+		    h_syn += p[i].w2[j] * (A[j] + (p[i].taus2[j] * (pop[i].ys2[j] - A[j]) * Es2[i][j] - (pop[i].ys2[j] * p[i].taus2[j] - A[j] * p[i].taum) * p[i].Em) / (p[i].taus2[j] - p[i].taum));
+		    pop[i].ys2[j] = A[j] + (pop[i].ys2[j] - A[j]) * Es2[i][j];
+		  }
+	      
+		else //delta current
+		  h_syn+=p[i].w2[j]*A[j];
 	    }
-	  else //zero-rise time
-	    if (p[i].taus2[j] > 0)
-	      {
-		input[i]+=p[i].w2[j]*pop[i].Xsyn2[j];
-		pop[i].Xsyn2[j] = A[j] + (pop[i].Xsyn2[j] - A[j]) * Es2[i][j];
-	      }
-	    else //delta current
-	      input[i]+=p[i].w2[j]*A[j];
 	}
 
+      input[i] += h_ext + h_syn;
 
     }
 }
@@ -452,10 +484,10 @@ void init_glm(struct PopParametersGLM p[],struct PopVariablesGLM pop[],int Npop,
       pop[i].v=dvector(K);
       if (mode>=GLIF) pop[i].u=dvector(K);
       else pop[i].u=NULL;
-      pop[i].Isyn1=dvector(Npop);
-      pop[i].Isyn2=dvector(Npop);
-      pop[i].Xsyn1=dvector(Npop);
-      pop[i].Xsyn2=dvector(Npop);
+      pop[i].yr1=dvector(Npop);
+      pop[i].yr2=dvector(Npop);
+      pop[i].ys1=dvector(Npop);
+      pop[i].ys2=dvector(Npop);
 
       p[i].Em= exp(-DT / p[i].taum);
       p[i].Em2= exp(-0.5*DT / p[i].taum);
@@ -498,10 +530,10 @@ void init_glm(struct PopParametersGLM p[],struct PopVariablesGLM pop[],int Npop,
       //pop[i].x=(p[i].N - n) * DT;
       /* printf("i=%d n=%g x/dt=%g\n",i,n,pop[i].x/DT); */
 
-      for (j=0;j<Npop;j++) pop[i].Isyn1[j]=0;
-      for (j=0;j<Npop;j++) pop[i].Isyn2[j]=0;
-      for (j=0;j<Npop;j++) pop[i].Xsyn1[j]=0;
-      for (j=0;j<Npop;j++) pop[i].Xsyn2[j]=0;
+      for (j=0;j<Npop;j++) pop[i].yr1[j]=0;
+      for (j=0;j<Npop;j++) pop[i].yr2[j]=0;
+      for (j=0;j<Npop;j++) pop[i].ys1[j]=0;
+      for (j=0;j<Npop;j++) pop[i].ys2[j]=0;
 
       pop[i].h=p[i].mu;
 
@@ -573,10 +605,10 @@ void free_pop(struct PopVariablesGLM pop[],struct PopParametersGLM p[],int Npop,
       free_dvector(pop[i].m0);
       free_dvector(pop[i].v);
       if (mode>=GLIF) free_dvector(pop[i].u);
-      free_dvector(pop[i].Isyn1);
-      free_dvector(pop[i].Isyn2);
-      free_dvector(pop[i].Xsyn1);
-      free_dvector(pop[i].Xsyn2);
+      free_dvector(pop[i].yr1);
+      free_dvector(pop[i].yr2);
+      free_dvector(pop[i].ys1);
+      free_dvector(pop[i].ys2);
 
       free_dvector(pop[i].g);
       free_dvector(pop[i].theta);

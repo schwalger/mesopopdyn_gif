@@ -558,7 +558,8 @@ void get_history_size(struct PopParametersGLM p[],int Npop)
       if (k*DT<=p[i].tref)
 	k=(int)(p[i].tref/DT)+1;
       p[i].K=k;
-      printf("Use K=%d bins for history of population %d (T=%g sec)\n",i+1,p[i].K,p[i].K*DT);
+      //      p[i].K=20000;
+      printf("Use K=%d bins for history of population %d (T=%g sec)\n",p[i].K,i+1,p[i].K*DT);
     }
 }
 
@@ -620,11 +621,7 @@ void get_psd_pop(double **SA,int Nbin,int Ntrials,struct PopParametersGLM neuron
   rate=dmatrix(Npop,Nbin);
 
   simulate(Nbin,A,rate,pop,rng,neuron,Npop, mode, 0);
-  /* for (j=0;j<Npop;j++)  */
-  /*   { */
-  /*     printf("rate %g \n",get_mean(rate[j],Nbin)); */
-  /*     for (i=0;i<Nbin;i++) printf("t=%g r=%g\n",i*DTBIN,rate[j][i]); */
-  /*   } */
+
   double complex *AF[Npop];
   for (j=0;j<Npop;j++)
     {
@@ -693,7 +690,8 @@ void get_trajectory(double **A,double **rate,int Nbin, int Npop,struct PopParame
 
   clock_t start=clock();
   simulate(Nbin,A,rate,pop,rng,neuron,Npop, mode, 1);
-  printf("Execution time: %g seconds\n",(double)(clock()-start)/CLOCKS_PER_SEC);
+  double sim_t=(double)(clock()-start)/CLOCKS_PER_SEC;
+  printf("Execution time of mesoscopic dynamics: %g seconds, %g s per biosecond\n",sim_t,sim_t/Nbin/DTBIN);
 
 
   int i;
