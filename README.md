@@ -1,3 +1,5 @@
+**NOTE: There is an updated version of the simulation code as well as novel implementations in the Python and Julia languages [here](https://github.com/schwalger/mesopopdyn_microcircuit). It implements, as an example, the cortical microcircuit model of Potjans and Diesmann, Cereb. Cortex (2014).**
+
 This project provides simulation code associated with the publication
 
 [T. Schwalger, M. Deger, and W. Gerstner. Towards a theory of cortical columns: From spiking neurons to interacting neural populations of finite size. PLoS Comput. Biol., 13(4):e1005507, 2017.](https://infoscience.epfl.ch/record/227465?ln=en)
